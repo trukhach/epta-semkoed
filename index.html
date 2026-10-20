@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1a1420">
+<title>Епта Семкоед</title>
+<link rel="icon" href="icon.png">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--y:#ffd23a;--r:#e8412c;--ink:#16121a;--paper:#f3ead2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#1a1420;color:#fff;font-family:Rubik,system-ui,sans-serif;touch-action:none;overscroll-behavior:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));gap:12px;background:rgba(14,10,18,.55);backdrop-filter:blur(2px);z-index:5;overflow-y:auto}
+.screen.on{display:flex}
+.screen{justify-content:flex-start}.screen>:first-child{margin-top:auto}.screen>:last-child{margin-bottom:auto}
+.title{font-family:"Russo One",sans-serif;text-align:center;line-height:.95;margin:0 0 8px;text-shadow:0 4px 0 #000,0 0 24px rgba(0,0,0,.6)}
+.title .a{display:block;font-size:clamp(34px,11vw,64px);color:var(--y);transform:rotate(-4deg)}
+.title .b{display:block;font-size:clamp(40px,13vw,76px);color:#fff;transform:rotate(2deg);letter-spacing:1px}
+h2{font-family:"Russo One",sans-serif;font-size:clamp(26px,8vw,40px);margin:0 0 6px;color:var(--y);text-shadow:0 3px 0 #000;text-align:center}
+.btn{font-family:"Russo One",sans-serif;font-size:clamp(18px,5.6vw,24px);min-width:min(300px,86vw);padding:14px 18px;border:3px solid #000;border-radius:14px;background:var(--y);color:#111;box-shadow:0 5px 0 #000;cursor:pointer;transition:transform .06s;text-align:center}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #000}
+.btn.red{background:var(--r);color:#fff}
+.btn.gray{background:#d9d2c3}
+.btn.small{min-width:0;font-size:16px;padding:10px 14px}
+.btn:disabled{opacity:.45}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.note{max-width:420px;text-align:center;font-size:16px;line-height:1.4;color:#eee;background:rgba(0,0,0,.45);padding:12px 14px;border-radius:12px}
+.money{font-family:"Russo One";color:var(--y);font-size:18px}
+#hud{position:fixed;left:0;right:0;top:0;display:none;justify-content:space-between;align-items:flex-start;padding:max(10px,env(safe-area-inset-top)) 12px 0;z-index:3;pointer-events:none;font-family:"Russo One";text-shadow:0 2px 0 #000}
+#hud.on{display:flex}
+#hud .box{background:rgba(0,0,0,.5);border-radius:10px;padding:6px 10px;font-size:18px;line-height:1.15}
+#hud .big{font-size:24px;color:var(--y)}
+#pauseBtn{pointer-events:auto;font-family:"Russo One";background:rgba(0,0,0,.55);color:#fff;border:2px solid #fff4;border-radius:10px;padding:8px 12px;font-size:16px}
+#levels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:min(420px,92vw)}
+.lv{aspect-ratio:1;border:3px solid #000;border-radius:12px;background:var(--paper);color:#111;font-family:"Russo One";font-size:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 0 #000;cursor:pointer}
+.lv small{font-size:11px;color:#c58b00;letter-spacing:1px;min-height:13px}
+.lv.lock{background:#4a4450;color:#888}
+.lv:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+#chars{display:flex;flex-direction:column;gap:10px;width:min(440px,94vw)}
+.card{display:flex;gap:10px;align-items:center;background:var(--paper);color:#111;border:3px solid #000;border-radius:14px;padding:8px;box-shadow:0 4px 0 #000}
+.card canvas{position:static;width:84px;height:96px;flex:none;background:linear-gradient(#6b5a7a,#3b3242);border-radius:10px;border:2px solid #000}
+.card .info{flex:1;min-width:0}
+.card b{font-family:"Russo One";font-size:18px;display:block}
+.card span{font-size:13px;color:#444;display:block;margin:2px 0 6px}
+.card.sel{background:#fff6c8}
+.stars{font-size:46px;letter-spacing:6px;color:#555;text-shadow:0 3px 0 #000}
+.stars i{font-style:normal}.stars i.on{color:var(--y)}
+#toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);font-family:"Russo One";font-size:clamp(24px,8vw,38px);color:var(--y);text-shadow:0 3px 0 #000,0 0 12px #000;z-index:4;pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;white-space:nowrap}
+#splash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:4;pointer-events:none;font-family:"Russo One";text-shadow:0 4px 0 #000}
+#splash.on{display:flex}
+#splash .l1{font-size:22px;color:#ddd}#splash .l2{font-size:46px;color:var(--y)}#splash .l3{font-size:20px;margin-top:6px}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="hud">
+  <div class="box" id="hudL"><div class="big" id="hSeeds">0/0</div><div id="hSub">семок</div></div>
+  <div class="box" id="hudM" style="text-align:center"><div class="big" id="hTime">30</div><div id="hTimeSub">сек</div></div>
+  <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><button id="pauseBtn">❚❚ Перекур</button><div class="box money" id="hMoney">0 ₽</div></div>
+</div>
+<div id="toast"></div>
+<div id="splash"><div class="l1" id="spl1"></div><div class="l2" id="spl2"></div><div class="l3" id="spl3"></div></div>
+
+<div class="screen on" id="sMenu">
+  <div class="title"><span class="a">ЕПТА</span><span class="b">СЕМКОЕД</span></div>
+  <button class="btn" data-go="levels">Че, ебашим?</button>
+  <button class="btn red" data-act="endless">До упора</button>
+  <button class="btn gray" data-go="chars">Пацаны с района</button>
+  <div class="row"><button class="btn gray small" data-go="help">Чё как?</button><button class="btn gray small" id="sndBtn">Музон: орёт</button></div>
+  <div class="money" id="menuMoney"></div>
+</div>
+
+<div class="screen" id="sLevels">
+  <h2>Куда двинем?</h2>
+  <div id="levels"></div>
+  <button class="btn gray small" data-go="menu">← В менюшку</button>
+</div>
+
+<div class="screen" id="sChars">
+  <h2>Пацаны с района</h2>
+  <div class="money" id="charsMoney"></div>
+  <div id="chars"></div>
+  <button class="btn gray small" data-go="menu">← В менюшку</button>
+</div>
+
+<div class="screen" id="sHelp">
+  <h2>Чё как?</h2>
+  <div class="note">Семки подлетают — <b>тапай по ним</b>, пацан лузгает.<br><br>
+  Набери норму, пока время не вышло. Чем быстрее — тем больше звёзд.<br><br>
+  <b>Окурки не трогай</b> — западло, минус 3 секунды.<br>
+  <b>Золотая семка</b> — сразу +5.<br><br>
+  Лузгай подряд без промахов — пойдёт серия и лишние бабки. На бабки покупай новых пацанов: у каждого своя фишка.<br><br>
+  «До упора» — бесконечно, пока нервы не сдадут.</div>
+  <button class="btn" data-go="menu">Понял, принял</button>
+</div>
+
+<div class="screen" id="sPause">
+  <h2>Перекур</h2>
+  <button class="btn" data-act="resume">Погнали дальше</button>
+  <button class="btn gray" data-act="restart">Заново</button>
+  <button class="btn gray" data-act="tomenu">В менюшку</button>
+</div>
+
+<div class="screen" id="sResult">
+  <h2 id="rTitle">ЗАЛУЗГАЛ!</h2>
+  <div class="stars" id="rStars"></div>
+  <div class="note" id="rText"></div>
+  <button class="btn" id="rNext" data-act="next">Дальше погнали</button>
+  <button class="btn gray" data-act="restart">Ещё разок</button>
+  <button class="btn gray" data-act="tomenu">В менюшку</button>
+</div>
+
+<script>
+"use strict";
+/* ============ Telegram ============ */
+const tg = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData !== undefined ? window.Telegram.WebApp : null;
+if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#1a1420'); tg.setBackgroundColor && tg.setBackgroundColor('#1a1420'); tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {} }
+function haptic(kind) { try { if (!tg || !tg.HapticFeedback) return; if (kind === 'err') tg.HapticFeedback.notificationOccurred('error'); else if (kind === 'ok') tg.HapticFeedback.notificationOccurred('success'); else tg.HapticFeedback.impactOccurred(kind || 'light'); } catch (e) {} }
+
+/* ============ Сохранение ============ */
+const SAVE_KEY = 'epta_semkoed_v1';
+const save = { money: 0, stars: {}, owned: [0], cur: 0, best: 0, sound: true };
+function loadSave(obj) { if (obj && typeof obj === 'object') Object.assign(save, obj); }
+try { loadSave(JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')); } catch (e) {}
+function persist() {
+  const s = JSON.stringify(save);
+  try { localStorage.setItem(SAVE_KEY, s); } catch (e) {}
+  try { if (tg && tg.CloudStorage) tg.CloudStorage.setItem(SAVE_KEY, s, () => {}); } catch (e) {}
+}
+function score(s) { return (s.money || 0) + Object.values(s.stars || {}).reduce((a, b) => a + b, 0) * 1000 + (s.owned || []).length * 5000; }
+try {
+  if (tg && tg.CloudStorage) tg.CloudStorage.getItem(SAVE_KEY, (err, v) => {
+    if (err || !v) return; try { const c = JSON.parse(v); if (score(c) > score(save)) { loadSave(c); refreshMoney(); } } catch (e) {}
+  });
+} catch (e) {}
+
+/* ============ Пацаны ============ */
+const CHARS = [
+  { name: 'Вован Кепка', price: 0, perk: 'Свой в доску. Без понтов.', look: { suit: '#2a3a8c', stripe: '#fff', hat: 'kepka', hatC: '#5b5048', skin: '#f0c4a0', shirt: 'tel', cig: true } },
+  { name: 'Толян Шлёпа', price: 150, perk: '+4 секунды на каждый уровень', look: { suit: '#1d1d22', stripe: '#e8e8e8', hat: 'none', skin: '#eab896', shirt: 'white', chain: true, bruise: true } },
+  { name: 'Серый Тапок', price: 350, perk: 'Ловчее: зона тапа шире на 30%', look: { suit: '#8a1f2a', stripe: '#fff', hat: 'petushok', hatC: '#1f6e3a', skin: '#f2c8a6', shirt: 'tel', mus: false } },
+  { name: 'Дед Кефир', price: 600, perk: 'Семки летят медленнее на 15%', look: { suit: '#4b4f3a', stripe: '#d9d2a0', hat: 'kepka', hatC: '#2b2b2b', skin: '#e4b493', shirt: 'white', mus: true, nose: true, bottle: '#e9efe8', grey: true } },
+  { name: 'Жорик Синий', price: 900, perk: 'Двойные бабки за семки', look: { suit: '#235e8f', stripe: '#9fd0ff', hat: 'none', skin: '#c9a6b4', shirt: 'tel', nose: true, bottle: '#2f6b33', bruise: true } },
+  { name: 'Гриня Бутылка', price: 1300, perk: 'Окурков летит вдвое меньше', look: { suit: '#5a2a6e', stripe: '#ffd23a', hat: 'petushok', hatC: '#c22', skin: '#f0c09a', shirt: 'white', bottle: '#6b3a10', gold: true } },
+  { name: 'Михалыч', price: 2000, perk: 'Золотые семки — в три раза чаще', look: { suit: '#3a3a3a', stripe: '#c9a43a', hat: 'kepka', hatC: '#7a3b1e', skin: '#e7b18c', shirt: 'tel', mus: true, gold: true, chain: true, grey: true } },
+  { name: 'Санёк Барыга', price: 3200, perk: 'Всего понемногу: +2 сек, шире тап, ×1.5 бабки', look: { suit: '#0f6b5a', stripe: '#fff', hat: 'kepka', hatC: '#ddd', skin: '#f3caa8', shirt: 'white', chain: true, gold: true, cig: true } },
+];
+function perks(i) {
+  const p = { time: 0, radius: 1, slow: 1, money: 1, bad: 1, gold: 1 };
+  if (i === 1) p.time = 4; if (i === 2) p.radius = 1.3; if (i === 3) p.slow = 0.85;
+  if (i === 4) p.money = 2; if (i === 5) p.bad = 0.5; if (i === 6) p.gold = 3;
+  if (i === 7) { p.time = 2; p.radius = 1.15; p.money = 1.5; }
+  return p;
+}
+
+/* ============ Уровни ============ */
+const PLACES = ['У подъезда', 'Гаражи', 'Остановка', 'Рынок', 'Стройка', 'Электричка'];
+const NLEVELS = 30;
+function levelCfg(n) {
+  const time = 30 + Math.min(n, 10);
+  const spawn = Math.max(0.3, 0.9 - n * 0.022);
+  const bad = n < 3 ? 0 : Math.min(0.06 + n * 0.01, 0.3);
+  const rate = 0.36 + Math.min(n, 30) * 0.008;
+  const goal = Math.max(10, Math.round(time / spawn * (1 - bad) * rate));
+  return { time, spawn, bad, goal, gold: 0.035, speed: 1 + n * 0.015, maxOn: Math.min(3 + Math.floor(n / 3), 10) };
+}
+
+/* ============ Фразы ============ */
+const PH_GOOD = ['Красава, братан!', 'Лузганул по-взрослому!', 'Шелуха летит — душа поёт!', 'Семка к семке!', 'Ваще огонь!', 'Чисто по-пацански!', 'Уважуха!', 'Зубы — мельница!'];
+const PH_WIN = ['Норма сделана, можно и на лавочку.', 'Весь район в шелухе. Уважаю.', 'Бабушки у подъезда в шоке.', 'Пацаны сказали — пацаны сделали.'];
+const PH_LOSE = ['Не вывез, братишка. Бывает.', 'Семки летали, а ты считал ворон.', 'Слился. Иди тренируйся на кошках.', 'Норма не сделана — не по понятиям.'];
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+/* ============ Звук ============ */
+let AC = null, master = null, musicBus = null, sfxBus = null, musicTimer = null, curTrack = null;
+function audioInit() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  master = AC.createGain(); master.gain.value = save.sound ? 0.8 : 0; master.connect(AC.destination);
+  musicBus = AC.createGain(); musicBus.gain.value = 0.32; musicBus.connect(master);
+  sfxBus = AC.createGain(); sfxBus.gain.value = 0.7; sfxBus.connect(master);
+  playMusic(curTrack || 'menu');
+}
+function setSound(on) { save.sound = on; persist(); if (master) master.gain.setTargetAtTime(on ? 0.8 : 0, AC.currentTime, 0.05); document.getElementById('sndBtn').textContent = on ? 'Музон: орёт' : 'Музон: заткнут'; }
+let noiseBuf = null;
+function noise() { if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } const s = AC.createBufferSource(); s.buffer = noiseBuf; return s; }
+function env(g, t, a, peak, dec) { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); }
+function sfx(type) {
+  if (!AC || !save.sound) return; const t = AC.currentTime;
+  if (type === 'crack') {
+    const n = noise(), f = AC.createBiquadFilter(), g = AC.createGain(); f.type = 'bandpass'; f.frequency.value = rnd(2500, 4200); f.Q.value = 4;
+    n.connect(f); f.connect(g); g.connect(sfxBus); env(g, t, 0.002, 0.9, 0.05); n.start(t); n.stop(t + 0.08);
+    const o = AC.createOscillator(), g2 = AC.createGain(); o.type = 'square'; o.frequency.setValueAtTime(rnd(900, 1300), t); o.frequency.exponentialRampToValueAtTime(300, t + 0.04);
+    o.connect(g2); g2.connect(sfxBus); env(g2, t, 0.001, 0.12, 0.04); o.start(t); o.stop(t + 0.06);
+  } else if (type === 'gold') {
+    [0, 4, 7, 12].forEach((s, i) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = 880 * Math.pow(2, s / 12); o.connect(g); g.connect(sfxBus); env(g, t + i * 0.05, 0.005, 0.25, 0.18); o.start(t + i * 0.05); o.stop(t + i * 0.05 + 0.3); });
+  } else if (type === 'bad') {
+    const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.3);
+    o.connect(g); g.connect(sfxBus); env(g, t, 0.01, 0.35, 0.3); o.start(t); o.stop(t + 0.4);
+    const n = noise(), f = AC.createBiquadFilter(), g2 = AC.createGain(); f.type = 'highpass'; f.frequency.value = 1500; n.connect(f); f.connect(g2); g2.connect(sfxBus); env(g2, t, 0.01, 0.25, 0.2); n.start(t); n.stop(t + 0.3);
+  } else if (type === 'btn') {
+    const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(260, t + 0.08); o.connect(g); g.connect(sfxBus); env(g, t, 0.003, 0.3, 0.09); o.start(t); o.stop(t + 0.12);
+  } else if (type === 'win' || type === 'lose') {
+    const seq = type === 'win' ? [57, 60, 64, 69, 72] : [64, 63, 62, 57];
+    seq.forEach((m, i) => accordion(t + i * 0.16, m + 12, type === 'win' && i === seq.length - 1 ? 0.6 : 0.15, 0.22, sfxBus));
+  }
+}
+const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+function accordion(t, m, dur, vol, bus) {
+  const g = AC.createGain(), f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 2400; f.Q.value = 1;
+  const lfo = AC.createOscillator(), lg = AC.createGain(); lfo.frequency.value = 5.6; lg.gain.value = mf(m) * 0.006; lfo.connect(lg);
+  [-7, 7].forEach(dt => { const o = AC.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mf(m); o.detune.value = dt; lg.connect(o.frequency); o.connect(f); o.start(t); o.stop(t + dur + 0.15); });
+  const sq = AC.createOscillator(), sg = AC.createGain(); sq.type = 'square'; sq.frequency.value = mf(m - 12); sg.gain.value = 0.35; sq.connect(sg); sg.connect(f); sq.start(t); sq.stop(t + dur + 0.15);
+  f.connect(g); g.connect(bus);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.03); g.gain.setValueAtTime(vol * 0.85, t + Math.max(0.04, dur - 0.03)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.12);
+  lfo.start(t); lfo.stop(t + dur + 0.15);
+}
+function pluck(t, m, vol, dec) {
+  const o = AC.createOscillator(), o2 = AC.createOscillator(), f = AC.createBiquadFilter(), g = AC.createGain();
+  o.type = 'triangle'; o2.type = 'sawtooth'; o.frequency.value = o2.frequency.value = mf(m); o2.detune.value = 4;
+  f.type = 'lowpass'; f.frequency.setValueAtTime(2600, t); f.frequency.exponentialRampToValueAtTime(500, t + dec);
+  const g2 = AC.createGain(); g2.gain.value = 0.25; o2.connect(g2); g2.connect(f); o.connect(f); f.connect(g); g.connect(musicBus);
+  env(g, t, 0.004, vol, dec); o.start(t); o2.start(t); o.stop(t + dec + 0.05); o2.stop(t + dec + 0.05);
+}
+// Собственная мелодия в духе дворового шансона: ля минор, «бас — аккорд»
+const CH = { Am: [57, [57, 60, 64]], Dm: [50, [57, 62, 65]], E: [52, [56, 59, 64]], E7: [52, [56, 62, 64]], C: [48, [55, 60, 64]], G: [55, [55, 59, 62]], F: [53, [57, 60, 65]], A7: [57, [57, 61, 67]] };
+const PROG = ['Am', 'Am', 'Dm', 'Am', 'E', 'E7', 'Am', 'A7', 'Dm', 'G', 'C', 'F', 'Dm', 'E', 'Am', 'E7'];
+function seeded(s) { return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+function buildMelody(seed) {
+  const r = seeded(seed), scale = [57, 59, 60, 62, 64, 65, 67, 68, 69, 71, 72, 74, 76];
+  const rhythms = [[2, 2], [1, 1, 2], [3, 1], [1, 1, 1, 1], [2, 1, 1], [4]];
+  let last = 64; const mel = [];
+  PROG.forEach((ch, bar) => {
+    const tones = CH[ch][1].map(x => x + 12);
+    let rh = bar % 4 === 3 ? (r() < 0.5 ? [4] : [3, 1]) : rhythms[Math.floor(r() * 5)];
+    let pos = 0;
+    rh.forEach((len, k) => {
+      let n;
+      if (k === 0) { n = tones.reduce((b, x) => Math.abs(x - last) < Math.abs(b - last) ? x : b, tones[0]); if (r() < 0.3) n = tones[Math.floor(r() * 3)]; }
+      else { const step = r() < 0.5 ? 1 : -1; let idx = scale.indexOf(last); if (idx < 0) idx = 4; idx = Math.max(0, Math.min(scale.length - 1, idx + step * (r() < 0.7 ? 1 : 2))); n = scale[idx]; if (ch.startsWith('E') && n === 67) n = 68; if (!ch.startsWith('E') && n === 68) n = 67; }
+      mel.push([bar * 4 + pos, n, len]); pos += len; last = n;
+    });
+  });
+  return mel;
+}
+const TRACKS = { menu: { bpm: 96, mel: buildMelody(77) }, game: { bpm: 138, mel: buildMelody(2024) } };
+let musicPos = 0, musicStart = 0;
+function playMusic(name) {
+  curTrack = name; if (!AC) return;
+  clearInterval(musicTimer); musicBus.gain.cancelScheduledValues(AC.currentTime);
+  const old = musicBus; old.gain.setTargetAtTime(0, AC.currentTime, 0.08); setTimeout(() => { try { old.disconnect(); } catch (e) {} }, 600);
+  musicBus = AC.createGain(); musicBus.gain.value = 0.32; musicBus.connect(master);
+  if (!name) return;
+  const tr = TRACKS[name], e8 = 60 / tr.bpm / 2, loopLen = PROG.length * 4;
+  musicStart = AC.currentTime + 0.1; musicPos = 0; const bus = musicBus;
+  const tick = () => {
+    if (bus !== musicBus) return;
+    while (musicStart + musicPos * e8 < AC.currentTime + 0.4) {
+      const t = musicStart + musicPos * e8, step = musicPos % loopLen, bar = Math.floor(step / 4), beat = step % 4, ch = CH[PROG[bar]];
+      if (beat === 0) pluck(t, ch[0] - 12, 0.5, 0.35);
+      if (beat === 2) pluck(t, ch[0] - 5, 0.4, 0.3);
+      if (beat === 1 || beat === 3) ch[1].forEach((m, i) => pluck(t + i * 0.012, m, 0.13, 0.16));
+      const cyc = Math.floor(musicPos / loopLen);
+      tr.mel.forEach(([p, m, len]) => { if (p === step) accordion(t, m + (cyc % 2 === 1 && name === 'game' ? 12 : 0), len * e8 * 0.92, 0.12, musicBus); });
+      if (name === 'game' && (beat === 1 || beat === 3)) { const n = noise(), f = AC.createBiquadFilter(), g = AC.createGain(); f.type = 'highpass'; f.frequency.value = 6000; n.connect(f); f.connect(g); g.connect(musicBus); env(g, t, 0.002, 0.06, 0.05); n.start(t); n.stop(t + 0.08); }
+      musicPos++;
+    }
+  };
+  tick(); musicTimer = setInterval(tick, 100);
+}
+
+/* ============ Рисование пацана ============ */
+function shade(hex, a) { let c = hex.replace('#', ''); if (c.length === 3) c = c.split('').map(x => x + x).join(''); const n = parseInt(c, 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255; const f = v => Math.max(0, Math.min(255, Math.round(a < 0 ? v * (1 + a) : v + (255 - v) * a))); return `rgb(${f(r)},${f(g)},${f(b)})`; }
+function line(c, x1, y1, x2, y2, w, col) { c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); }
+function ell(c, x, y, rx, ry, col, rot) { c.fillStyle = col; c.beginPath(); c.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2); c.fill(); }
+function limb(c, x1, y1, x2, y2, w, col, stripe, side) {
+  line(c, x1, y1, x2, y2, w + 4, '#111'); line(c, x1, y1, x2, y2, w, col);
+  if (stripe) { const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy), nx = -dy / L * side, ny = dx / L * side, o = w * 0.3; line(c, x1 + nx * o, y1 + ny * o, x2 + nx * o, y2 + ny * o, 2.5, stripe); line(c, x1 + nx * (o + 4), y1 + ny * (o + 4), x2 + nx * (o + 4), y2 + ny * (o + 4), 2.5, stripe); }
+}
+// origin: середина между стоп; рост ~240
+function drawGopnik(c, L, t, chew, eat) {
+  const suit = L.suit, dark = shade(suit, -0.3), sk = L.skin, skD = shade(sk, -0.18);
+  const bob = Math.sin(t * 2.4) * 1.6, by = bob;
+  ell(c, 0, 4, 82, 11, 'rgba(0,0,0,.35)');
+  if (L.bottle) { c.save(); c.translate(92, 0); c.fillStyle = '#111'; c.fillRect(-10, -52, 20, 52); c.fillStyle = L.bottle; c.fillRect(-8, -50, 16, 48); c.fillRect(-4, -66, 8, 18); ell(c, 0, -50, 8, 5, L.bottle); c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(-5, -46, 3, 36); c.fillStyle = '#f3ead2'; c.fillRect(-8, -36, 16, 14); c.fillStyle = '#c22'; c.fillRect(-8, -31, 16, 3); c.restore(); }
+  // стопы
+  [-1, 1].forEach(s => { ell(c, s * 46, -6, 24, 11, '#111'); ell(c, s * 46, -8, 21, 8, '#2b2b2b'); line(c, s * 36, -10, s * 56, -10, 2, '#fff'); });
+  // голени
+  limb(c, -56, -86 + by * .3, -44, -14, 26, suit, L.stripe, 1);
+  limb(c, 56, -86 + by * .3, 44, -14, 26, suit, L.stripe, -1);
+  // корпус
+  c.save(); c.translate(0, by);
+  c.fillStyle = '#111'; c.beginPath(); c.moveTo(-44, -158); c.quadraticCurveTo(-52, -110, -36, -64); c.lineTo(36, -64); c.quadraticCurveTo(52, -110, 44, -158); c.closePath(); c.fill();
+  c.fillStyle = suit; c.beginPath(); c.moveTo(-41, -156); c.quadraticCurveTo(-49, -110, -34, -66); c.lineTo(34, -66); c.quadraticCurveTo(49, -110, 41, -156); c.closePath(); c.fill();
+  // майка в вырезе
+  c.save(); c.beginPath(); c.moveTo(-16, -158); c.lineTo(0, -128); c.lineTo(16, -158); c.closePath(); c.clip();
+  c.fillStyle = '#fff'; c.fillRect(-20, -162, 40, 40); if (L.shirt === 'tel') { c.fillStyle = '#1f3c88'; for (let y = -160; y < -124; y += 7) c.fillRect(-20, y, 40, 3); } c.restore();
+  line(c, 0, -128, 0, -68, 2.5, dark); ell(c, 0, -126, 3, 4, '#ccc');
+  if (L.chain) { c.strokeStyle = '#f2c230'; c.lineWidth = 3; c.beginPath(); c.arc(0, -160, 15, 0.25 * Math.PI, 0.75 * Math.PI); c.stroke(); }
+  // колени
+  ell(c, -56, -88, 20, 18, '#111'); ell(c, -56, -88, 17, 15, shade(suit, 0.08));
+  ell(c, 56, -88, 20, 18, '#111'); ell(c, 56, -88, 17, 15, shade(suit, 0.08));
+  // левая рука с кульком
+  limb(c, -40, -148, -60, -104, 22, suit, L.stripe, -1);
+  limb(c, -60, -104, -70, -66, 19, suit, L.stripe, -1);
+  ell(c, -72, -58, 10, 10, '#111'); ell(c, -72, -58, 8, 8, sk);
+  // кулёк из газеты
+  c.save(); c.translate(-80, -60); c.rotate(-0.25);
+  c.fillStyle = '#111'; c.beginPath(); c.moveTo(-22, -34); c.lineTo(22, -34); c.lineTo(2, 22); c.closePath(); c.fill();
+  c.fillStyle = '#e9e2cc'; c.beginPath(); c.moveTo(-19, -32); c.lineTo(19, -32); c.lineTo(2, 18); c.closePath(); c.fill();
+  c.strokeStyle = '#9a9380'; c.lineWidth = 1.5; for (let y = -26; y < 6; y += 6) { c.beginPath(); c.moveTo(-14 + (y + 26) * 0.35, y); c.lineTo(14 - (y + 26) * 0.3, y); c.stroke(); }
+  for (let i = 0; i < 6; i++) { c.save(); c.translate(-13 + i * 5, -35 - (i % 2) * 3); c.rotate(i * 0.7); ell(c, 0, 0, 3, 5.5, '#151515'); c.restore(); }
+  c.restore();
+  // правая рука: от колена к рту
+  const hx = 70 + (12 - 70) * eat, hy = -66 + (-170 - -66) * eat;
+  const ex = 62 - 18 * eat, ey = -104 - 20 * eat;
+  limb(c, 40, -148, ex, ey, 22, suit, L.stripe, 1);
+  limb(c, ex, ey, hx, hy + 8, 19, suit, L.stripe, 1);
+  // шея и голова
+  c.fillStyle = skD; c.fillRect(-11, -172, 22, 18);
+  const hy0 = -192;
+  ell(c, -31, hy0, 8, 10, '#111'); ell(c, -31, hy0, 6, 8, sk); ell(c, 31, hy0, 8, 10, '#111'); ell(c, 31, hy0, 6, 8, sk);
+  ell(c, 0, hy0, 33, 37, '#111'); ell(c, 0, hy0, 30, 34, sk);
+  ell(c, 0, hy0 + 18, 26, 15, L.grey ? 'rgba(200,200,200,.35)' : 'rgba(70,45,30,.22)');
+  if (L.bruise) ell(c, -12, hy0 - 2, 10, 8, 'rgba(110,50,140,.55)');
+  // брови и глаза
+  line(c, -20, hy0 - 12, -5, hy0 - 8, 4, L.grey ? '#888' : '#3a2a20'); line(c, 20, hy0 - 12, 5, hy0 - 8, 4, L.grey ? '#888' : '#3a2a20');
+  ell(c, -12, hy0 - 2, 5, 3.4, '#fff'); ell(c, 12, hy0 - 2, 5, 3.4, '#fff'); ell(c, -11, hy0 - 2, 2.4, 2.6, '#111'); ell(c, 13, hy0 - 2, 2.4, 2.6, '#111');
+  line(c, -18, hy0 - 4.5, -6, hy0 - 4.5, 2, skD); line(c, 6, hy0 - 4.5, 18, hy0 - 4.5, 2, skD);
+  ell(c, 0, hy0 + 8, 6, 8, L.nose ? '#d4606e' : skD); ell(c, -2, hy0 + 6, 2, 3, 'rgba(255,255,255,.4)');
+  if (L.mus) { c.fillStyle = L.grey ? '#9a9a9a' : '#3a2a20'; c.beginPath(); c.moveTo(-15, hy0 + 20); c.quadraticCurveTo(0, hy0 + 10, 15, hy0 + 20); c.quadraticCurveTo(0, hy0 + 16, -15, hy0 + 20); c.fill(); }
+  // рот
+  const my = hy0 + 22;
+  if (chew > 0.05) { ell(c, 0, my, 9 + chew * 2, 2 + chew * 6, '#3a0d0d'); c.fillStyle = '#fff'; c.fillRect(-6, my - 2 - chew * 5, 12, 3); if (L.gold) { c.fillStyle = '#f2c230'; c.fillRect(1, my - 2 - chew * 5, 4, 3.5); } }
+  else { c.strokeStyle = '#5a2a20'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(-9, my); c.quadraticCurveTo(2, my + 3, 11, my - 3); c.stroke();
+    if (L.cig) { line(c, 10, my - 1, 30, my + 4, 4, '#f5f0e6'); line(c, 10, my - 1, 15, my + 0.3, 4, '#d58a3a'); ell(c, 31, my + 4.3, 2.3, 2.3, '#f25'); const sm = (t * 18) % 30; c.fillStyle = `rgba(220,220,220,${0.35 - sm / 90})`; c.beginPath(); c.arc(33 + Math.sin(t * 3) * 3, my - sm, 3 + sm / 6, 0, 7); c.fill(); } }
+  // головной убор
+  if (L.hat === 'kepka') {
+    const hc = L.hatC; c.fillStyle = '#111'; c.beginPath(); c.ellipse(0, hy0 - 22, 39, 22, 0, Math.PI, 0); c.fill();
+    c.fillStyle = hc; c.beginPath(); c.ellipse(0, hy0 - 22, 36, 19, 0, Math.PI, 0); c.fill();
+    line(c, -14, hy0 - 38, -10, hy0 - 22, 1.5, shade(hc, -0.3)); line(c, 14, hy0 - 38, 10, hy0 - 22, 1.5, shade(hc, -0.3)); line(c, 0, hy0 - 41, 0, hy0 - 22, 1.5, shade(hc, -0.3)); ell(c, 0, hy0 - 40, 3, 2, shade(hc, -0.3));
+    ell(c, 0, hy0 - 20, 37, 8, '#111'); ell(c, 0, hy0 - 19, 34, 6, shade(hc, -0.25));
+  } else if (L.hat === 'petushok') {
+    const hc = L.hatC; c.fillStyle = '#111'; c.beginPath(); c.moveTo(-34, hy0 - 12); c.quadraticCurveTo(-30, hy0 - 60, 4, hy0 - 72); c.quadraticCurveTo(30, hy0 - 52, 34, hy0 - 12); c.closePath(); c.fill();
+    c.fillStyle = hc; c.beginPath(); c.moveTo(-31, hy0 - 14); c.quadraticCurveTo(-27, hy0 - 57, 4, hy0 - 68); c.quadraticCurveTo(27, hy0 - 50, 31, hy0 - 14); c.closePath(); c.fill();
+    c.fillStyle = '#fff'; c.fillRect(-29, hy0 - 36, 58, 6); c.fillStyle = '#111'; c.fillRect(-34, hy0 - 20, 68, 12); c.fillStyle = shade(hc, -0.2); c.fillRect(-32, hy0 - 18, 64, 8);
+    ell(c, 4, hy0 - 72, 10, 10, '#111'); ell(c, 4, hy0 - 72, 8, 8, '#fff');
+  } else {
+    c.fillStyle = L.grey ? 'rgba(170,170,170,.5)' : 'rgba(60,40,30,.35)'; c.beginPath(); c.ellipse(0, hy0 - 6, 30, 30, 0, Math.PI * 1.05, Math.PI * 1.95); c.fill();
+    ell(c, -10, hy0 - 26, 8, 4, 'rgba(255,255,255,.35)', -0.4);
+  }
+  // кисть правой руки (поверх лица при поедании)
+  ell(c, hx, hy, 10, 10, '#111'); ell(c, hx, hy, 8, 8, sk);
+  if (eat > 0.6) { c.save(); c.translate(hx + 2, hy - 8); ell(c, 0, 0, 2.6, 5, '#151515', 0.6); c.restore(); }
+  c.restore();
+}
+
+/* ============ Канвас, фон ============ */
+const cv = document.getElementById('cv'), cx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, U = 1, groundY = 0, bg = null, bgGroup = -1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR; U = Math.min(W / 400, H / 720); groundY = H - 120 * U; bgGroup = -1;
+}
+window.addEventListener('resize', resize); resize();
+function makeBg(group) {
+  const b = document.createElement('canvas'); b.width = W * DPR; b.height = H * DPR; const c = b.getContext('2d'); c.scale(DPR, DPR);
+  const skies = [['#f6b26b', '#e06c75', '#5b3a6e'], ['#8ec5e8', '#c9d8e0', '#e8d3b0'], ['#ffcf7a', '#e8795a', '#4a2e5c'], ['#6aa7d6', '#bcd3e3', '#d9cfb8'], ['#ff9a5a', '#a8405a', '#2a1e3c'], ['#1c2340', '#2e2a4f', '#4a3a5a']];
+  const sk = skies[group % skies.length], gr = c.createLinearGradient(0, 0, 0, groundY); gr.addColorStop(0, sk[2]); gr.addColorStop(0.55, sk[1]); gr.addColorStop(1, sk[0]); c.fillStyle = gr; c.fillRect(0, 0, W, groundY);
+  const night = group === 5, r = seeded(31 + group);
+  if (night) for (let i = 0; i < 60; i++) ell(c, r() * W, r() * groundY * 0.5, 1, 1, 'rgba(255,255,255,.7)');
+  ell(c, W * 0.78, groundY * 0.22, 26 * U, 26 * U, night ? '#f4f1d8' : 'rgba(255,240,200,.85)');
+  // панельки
+  let x = -20 * U;
+  while (x < W) {
+    const bw = (110 + r() * 90) * U, bh = (230 + r() * 220) * U, top = groundY - bh, col = ['#8a8a92', '#9b958a', '#7d8590', '#a3998d'][Math.floor(r() * 4)];
+    c.fillStyle = shade(col, night ? -0.55 : -0.1); c.fillRect(x, top, bw, bh); c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(x + bw - 6 * U, top, 6 * U, bh);
+    const cw = 14 * U, chh = 18 * U, gx = 12 * U, gy = 14 * U;
+    for (let yy = top + 14 * U; yy < groundY - 30 * U; yy += chh + gy) for (let xx = x + 10 * U; xx < x + bw - cw - 6 * U; xx += cw + gx) {
+      const lit = r() < (night ? 0.45 : 0.18); c.fillStyle = lit ? (r() < 0.5 ? '#ffd98a' : '#ffe9b5') : (night ? '#2a2a35' : '#4c5868'); c.fillRect(xx, yy, cw, chh);
+      c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(xx, yy + chh - 3 * U, cw, 3 * U);
+    }
+    x += bw + (8 + r() * 30) * U;
+  }
+  // граффити на заборе
+  c.fillStyle = night ? '#3a3542' : '#7b7f74'; c.fillRect(0, groundY - 70 * U, W, 70 * U);
+  for (let i = 0; i < W; i += 40 * U) { c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(i, groundY - 70 * U, 2 * U, 70 * U); }
+  c.save(); c.font = `${22 * U}px "Russo One",sans-serif`; c.fillStyle = night ? 'rgba(255,90,90,.6)' : 'rgba(200,30,40,.75)'; c.translate(W * 0.1, groundY - 30 * U); c.rotate(-0.06); c.fillText('ТУТ БЫЛ ВОВАН', 0, 0); c.restore();
+  c.save(); c.font = `${16 * U}px "Russo One",sans-serif`; c.fillStyle = 'rgba(40,40,200,.6)'; c.translate(W * 0.62, groundY - 44 * U); c.rotate(0.05); c.fillText('СЕМКИ = СИЛА', 0, 0); c.restore();
+  // асфальт
+  const ag = c.createLinearGradient(0, groundY, 0, H); ag.addColorStop(0, night ? '#2b2930' : '#55524f'); ag.addColorStop(1, night ? '#17151b' : '#34312f'); c.fillStyle = ag; c.fillRect(0, groundY, W, H - groundY);
+  c.fillStyle = night ? '#4a4650' : '#8d8880'; c.fillRect(0, groundY, W, 6 * U);
+  c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2 * U; for (let i = 0; i < 6; i++) { c.beginPath(); let px = r() * W, py = groundY + 20 * U + r() * (H - groundY - 30 * U); c.moveTo(px, py); for (let k = 0; k < 4; k++) { px += (r() - 0.5) * 50 * U; py += (r() - 0.3) * 14 * U; c.lineTo(px, py); } c.stroke(); }
+  // лавочка
+  const bx = W / 2, byy = groundY + 6 * U;
+  c.fillStyle = '#222'; c.fillRect(bx - 120 * U, byy - 34 * U, 8 * U, 40 * U); c.fillRect(bx + 112 * U, byy - 34 * U, 8 * U, 40 * U);
+  for (let i = 0; i < 3; i++) { c.fillStyle = '#111'; c.fillRect(bx - 132 * U, byy - (78 - i * 14) * U, 264 * U, 11 * U); c.fillStyle = ['#3f7a3a', '#b5482f', '#3f6fa0'][(i + group) % 3]; c.fillRect(bx - 130 * U, byy - (77 - i * 14) * U, 260 * U, 8 * U); }
+  c.fillStyle = '#111'; c.fillRect(bx - 134 * U, byy - 36 * U, 268 * U, 11 * U); c.fillStyle = '#8a5a2a'; c.fillRect(bx - 132 * U, byy - 35 * U, 264 * U, 8 * U);
+  // урна
+  const ux = W - 46 * U, uy = groundY + 30 * U; c.fillStyle = '#111'; c.beginPath(); c.moveTo(ux - 20 * U, uy - 50 * U); c.lineTo(ux + 20 * U, uy - 50 * U); c.lineTo(ux + 15 * U, uy); c.lineTo(ux - 15 * U, uy); c.closePath(); c.fill();
+  c.fillStyle = '#4a6b4a'; c.beginPath(); c.moveTo(ux - 17 * U, uy - 48 * U); c.lineTo(ux + 17 * U, uy - 48 * U); c.lineTo(ux + 13 * U, uy - 2 * U); c.lineTo(ux - 13 * U, uy - 2 * U); c.closePath(); c.fill();
+  // шелуха на асфальте
+  for (let i = 0; i < 70; i++) { c.save(); c.translate(r() * W, groundY + 10 * U + r() * (H - groundY)); c.rotate(r() * 6); ell(c, 0, 0, 2.2 * U, 4 * U, r() < 0.5 ? '#1a1a1a' : '#5a5a5a'); c.restore(); }
+  return b;
+}
+
+/* ============ Игровые объекты ============ */
+const G = { mode: null, level: 1, cfg: null, seeds: [], parts: [], pops: [], timeLeft: 0, caught: 0, spawnT: 0, running: false, combo: 0, comboT: 0, earned: 0, lives: 5, endlessT: 0, chew: 0, eat: 0, t: 0, perks: perks(0), char: 0, ended: false, shake: 0 };
+function spawnSeed() {
+  const c = G.cfg, sp = c.speed * G.perks.slow, fromLeft = Math.random() < 0.5;
+  const x = fromLeft ? rnd(W * 0.05, W * 0.45) : rnd(W * 0.55, W * 0.95);
+  const apex = rnd(H * 0.14, H * 0.5), g = 900 * U * sp * sp, vy = -Math.sqrt(2 * g * (H + 30 * U - apex));
+  const tFlight = -vy / g * 2, tx = rnd(W * 0.1, W * 0.9), vx = (tx - x) / tFlight;
+  let kind = 'seed'; const r = Math.random();
+  if (r < c.bad * G.perks.bad) kind = 'butt'; else if (r < c.bad * G.perks.bad + c.gold * G.perks.gold) kind = 'gold';
+  G.seeds.push({ x, y: H + 30 * U, vx, vy, g, rot: rnd(0, 6), vr: rnd(-8, 8), kind, dead: false });
+}
+function shellBurst(x, y, gold) {
+  for (let i = 0; i < 2; i++) G.parts.push({ x, y, vx: rnd(-260, 260) * U, vy: rnd(-380, -160) * U, rot: rnd(0, 6), vr: rnd(-18, 18), life: 1.2, col: gold ? '#f2c230' : '#1b1b1b', half: i });
+  for (let i = 0; i < 4; i++) G.parts.push({ x, y, vx: rnd(-180, 180) * U, vy: rnd(-260, -60) * U, rot: 0, vr: 0, life: 0.5, col: gold ? '#fff2a0' : '#ddd', dot: true });
+}
+function popText(x, y, txt, col) { G.pops.push({ x, y, txt, col: col || '#fff', life: 0.9 }); }
+let toastT = null;
+function toast(txt) { const el = document.getElementById('toast'); el.textContent = txt; el.style.opacity = 1; clearTimeout(toastT); toastT = setTimeout(() => el.style.opacity = 0, 1100); }
+
+function startGame(mode, level) {
+  audioInit(); G.mode = mode; G.level = level || 1; G.char = save.cur; G.perks = perks(save.cur);
+  G.cfg = mode === 'endless' ? { time: 0, spawn: 0.95, bad: 0.08, goal: 0, gold: 0.04, speed: 1, maxOn: 4 } : levelCfg(G.level);
+  G.seeds = []; G.parts = []; G.pops = []; G.caught = 0; G.spawnT = 0.6; G.combo = 0; G.comboT = 0; G.earned = 0; G.lives = 5; G.endlessT = 0; G.ended = false; G.shake = 0;
+  G.timeLeft = G.cfg.time + G.perks.time;
+  const gi = mode === 'endless' ? 5 : Math.floor((G.level - 1) / 5) % PLACES.length;
+  if (bgGroup !== gi || !bg) { bg = makeBg(gi); bgGroup = gi; }
+  showScreen(null); document.getElementById('hud').classList.add('on'); updHud();
+  const sp = document.getElementById('splash');
+  document.getElementById('spl1').textContent = mode === 'endless' ? 'Режим' : 'Уровень ' + G.level;
+  document.getElementById('spl2').textContent = mode === 'endless' ? 'ДО УПОРА' : PLACES[gi];
+  document.getElementById('spl3').textContent = mode === 'endless' ? 'Рекорд: ' + save.best : 'Норма: ' + G.cfg.goal + ' семок';
+  sp.classList.add('on'); G.running = false; playMusic('game'); const tok = G.token = (G.token || 0) + 1;
+  if (tg && tg.BackButton) tg.BackButton.show();
+  setTimeout(() => { if (tok !== G.token) return; sp.classList.remove('on'); if (!G.ended && G.mode === mode && curScreen === null) G.running = true; }, 1500);
+}
+function updHud() {
+  const e = G.mode === 'endless';
+  document.getElementById('hSeeds').textContent = e ? G.caught : G.caught + '/' + G.cfg.goal;
+  document.getElementById('hSub').textContent = e ? 'рекорд ' + save.best : 'семок';
+  document.getElementById('hTime').textContent = e ? '♥'.repeat(Math.max(0, G.lives)) || '—' : Math.ceil(Math.max(0, G.timeLeft));
+  document.getElementById('hTimeSub').textContent = e ? 'нервы' : 'сек';
+  document.getElementById('hMoney').textContent = (save.money + Math.floor(G.earned)) + ' ₽';
+}
+function addMoney(n) { G.earned += n * G.perks.money; }
+function tapAt(px, py) {
+  if (!G.running) return;
+  const R = 40 * U * G.perks.radius; let best = null, bd = 1e9;
+  for (const s of G.seeds) { if (s.dead) continue; const d = Math.hypot(s.x - px, s.y - py); if (d < R && d < bd) { bd = d; best = s; } }
+  if (!best) { return; }
+  best.dead = true;
+  if (best.kind === 'butt') {
+    sfx('bad'); haptic('err'); G.combo = 0; G.shake = 0.3;
+    for (let i = 0; i < 6; i++) G.parts.push({ x: best.x, y: best.y, vx: rnd(-150, 150) * U, vy: rnd(-200, -50) * U, rot: 0, vr: 0, life: 0.6, col: '#aaa', dot: true });
+    if (G.mode === 'endless') { G.lives--; popText(best.x, best.y, 'ТЬФУ! −♥', '#ff6a5a'); }
+    else { G.timeLeft -= 3; popText(best.x, best.y, 'ТЬФУ! −3 сек', '#ff6a5a'); }
+    toast(pick(['Фу, западло!', 'Окурок, ёпта!', 'Ты чё, не видишь?']));
+  } else {
+    const gold = best.kind === 'gold', v = gold ? 5 : 1;
+    G.caught += v; G.combo++; G.comboT = 1.3; G.chew = 1; G.eat = 1;
+    sfx(gold ? 'gold' : 'crack'); haptic(gold ? 'medium' : 'light'); shellBurst(best.x, best.y, gold);
+    const bonus = G.combo >= 5 ? 1 + Math.floor(G.combo / 5) : 1; addMoney(v * bonus);
+    popText(best.x, best.y - 10 * U, '+' + v + (bonus > 1 ? ' ×' + bonus : ''), gold ? '#ffd23a' : '#fff');
+    if (G.combo > 0 && G.combo % 10 === 0) toast(pick(PH_GOOD) + ' ×' + G.combo);
+    if (G.mode === 'endless' && gold && G.lives < 5) G.lives++;
+  }
+  updHud();
+}
+cv.addEventListener('pointerdown', e => { e.preventDefault(); tapAt(e.clientX, e.clientY); });
+
+function endLevel(win) {
+  if (G.ended) return; G.ended = true; G.running = false; document.getElementById('hud').classList.remove('on');
+  const e = G.mode === 'endless'; let stars = 0;
+  if (!e && win) { const frac = G.timeLeft / (G.cfg.time + G.perks.time); stars = frac >= 0.25 ? 3 : frac >= 0.1 ? 2 : 1; addMoney(10 * stars); save.stars[G.level] = Math.max(save.stars[G.level] || 0, stars); }
+  const got = Math.floor(G.earned); save.money += got;
+  let rec = false; if (e && G.caught > save.best) { save.best = G.caught; rec = true; }
+  persist(); playMusic('menu');
+  sfx(win || (e && rec) ? 'win' : 'lose'); haptic(win ? 'ok' : 'err');
+  document.getElementById('rTitle').textContent = e ? (rec ? 'НОВЫЙ РЕКОРД!' : 'НЕРВЫ СДАЛИ') : (win ? 'ЗАЛУЗГАЛ!' : 'НЕ ВЫВЕЗ');
+  document.getElementById('rStars').innerHTML = e ? '' : [1, 2, 3].map(i => `<i class="${i <= stars ? 'on' : ''}">★</i>`).join('');
+  document.getElementById('rText').innerHTML = e
+    ? `Залузгано: <b>${G.caught}</b><br>Рекорд: <b>${save.best}</b><br>Бабки: <b>+${got} ₽</b>`
+    : `${win ? pick(PH_WIN) : pick(PH_LOSE)}<br><br>Семок: <b>${G.caught}/${G.cfg.goal}</b> · Бабки: <b>+${got} ₽</b>`;
+  const nb = document.getElementById('rNext'); nb.style.display = (!e && win && G.level < NLEVELS) ? '' : 'none';
+  setTimeout(() => showScreen('result'), 350);
+}
+
+/* ============ Цикл ============ */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; G.t += dt;
+  if (G.running) update(dt);
+  else { // частицы досыпаются даже на паузе экрана результата
+    for (const p of G.parts) { p.vy += 900 * U * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.life -= dt; }
+    G.parts = G.parts.filter(p => p.life > 0);
+  }
+  draw(dt); requestAnimationFrame(frame);
+}
+function update(dt) {
+  const c = G.cfg;
+  if (G.mode === 'endless') { G.endlessT += dt; c.spawn = Math.max(0.32, 0.95 - G.endlessT * 0.006); c.speed = 1 + G.endlessT * 0.004; c.maxOn = Math.min(10, 4 + Math.floor(G.endlessT / 15)); c.bad = Math.min(0.25, 0.08 + G.endlessT * 0.001); }
+  else { G.timeLeft -= dt; if (G.timeLeft <= 0) { G.timeLeft = 0; updHud(); endLevel(false); return; } }
+  G.spawnT -= dt;
+  const alive = G.seeds.filter(s => !s.dead).length;
+  if (G.spawnT <= 0 && alive < c.maxOn) { spawnSeed(); if (Math.random() < 0.18 + G.level * 0.006) spawnSeed(); G.spawnT = c.spawn * rnd(0.7, 1.3); }
+  for (const s of G.seeds) {
+    s.vy += s.g * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.rot += s.vr * dt;
+    if (!s.dead && s.vy > 0 && s.y > H + 40 * U) { s.dead = true; if (s.kind !== 'butt') { G.combo = 0; if (G.mode === 'endless') { G.lives--; G.shake = 0.2; haptic('rigid'); } } }
+  }
+  G.seeds = G.seeds.filter(s => !s.dead);
+  for (const p of G.parts) { p.vy += 900 * U * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.life -= dt; }
+  G.parts = G.parts.filter(p => p.life > 0);
+  for (const p of G.pops) { p.y -= 60 * U * dt; p.life -= dt; } G.pops = G.pops.filter(p => p.life > 0);
+  G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
+  G.shake = Math.max(0, G.shake - dt);
+  G.hudT = (G.hudT || 0) - dt; if (G.hudT <= 0) { G.hudT = 0.1; updHud(); }
+  if (G.mode === 'endless') { if (G.lives <= 0) { updHud(); endLevel(false); } }
+  else if (G.caught >= c.goal) { updHud(); endLevel(true); }
+}
+function drawSeed(c, s) {
+  c.save(); c.translate(s.x, s.y); c.rotate(s.rot); const k = U * 1.5;
+  if (s.kind === 'butt') {
+    c.fillStyle = '#111'; c.fillRect(-15 * k, -5 * k, 30 * k, 10 * k); c.fillStyle = '#f2ece0'; c.fillRect(-4 * k, -4 * k, 18 * k, 8 * k); c.fillStyle = '#d58a3a'; c.fillRect(-14 * k, -4 * k, 11 * k, 8 * k);
+    c.fillStyle = '#666'; c.fillRect(13 * k, -4 * k, 2.5 * k, 8 * k); c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(-14 * k, 1 * k, 29 * k, 3 * k);
+  } else {
+    const gold = s.kind === 'gold';
+    if (gold) { c.fillStyle = 'rgba(255,220,80,.35)'; c.beginPath(); c.arc(0, 0, 20 * k + Math.sin(G.t * 10) * 3 * k, 0, 7); c.fill(); }
+    c.fillStyle = '#000'; c.beginPath(); c.moveTo(0, -14 * k); c.bezierCurveTo(10 * k, -10 * k, 9 * k, 8 * k, 0, 12 * k); c.bezierCurveTo(-9 * k, 8 * k, -10 * k, -10 * k, 0, -14 * k); c.fill();
+    c.fillStyle = gold ? '#f2c230' : '#1d1d1d'; c.beginPath(); c.moveTo(0, -12 * k); c.bezierCurveTo(8 * k, -8 * k, 7 * k, 7 * k, 0, 10 * k); c.bezierCurveTo(-7 * k, 7 * k, -8 * k, -8 * k, 0, -12 * k); c.fill();
+    c.strokeStyle = gold ? '#fff6b0' : '#8a8a8a'; c.lineWidth = 1.4 * k; [-3.5, 0, 3.5].forEach(o => { c.beginPath(); c.moveTo(o * k, -9 * k); c.quadraticCurveTo(o * 1.4 * k, 0, o * k, 8 * k); c.stroke(); });
+  }
+  c.restore();
+}
+function draw(dt) {
+  const c = cx; c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (!bg || bgGroup < 0) { bg = makeBg(0); bgGroup = 0; }
+  c.save(); if (G.shake > 0) c.translate(rnd(-6, 6) * U * G.shake * 3, rnd(-6, 6) * U * G.shake * 3);
+  c.drawImage(bg, 0, 0, W, H);
+  G.chew = Math.max(0, G.chew - dt * 3.5); G.eat = Math.max(0, G.eat - dt * 3);
+  const chewAnim = G.chew > 0 ? Math.abs(Math.sin(G.chew * 14)) : 0;
+  c.save(); c.translate(W / 2, groundY + 82 * U); const sc = U * 0.95; c.scale(sc, sc);
+  drawGopnik(c, CHARS[inMenu() ? save.cur : G.char].look, G.t, chewAnim, Math.sin(Math.min(1, G.eat) * Math.PI / 2));
+  c.restore();
+  for (const s of G.seeds) drawSeed(c, s);
+  for (const p of G.parts) {
+    c.globalAlpha = Math.min(1, p.life * 2);
+    if (p.dot) ell(c, p.x, p.y, 2 * U, 2 * U, p.col);
+    else { c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.fillStyle = p.col; c.beginPath(); c.ellipse(p.half ? 2 * U : -2 * U, 0, 4 * U, 9 * U, 0, p.half ? -Math.PI / 2 : Math.PI / 2, p.half ? Math.PI / 2 : Math.PI * 1.5); c.fill(); c.restore(); }
+  }
+  c.globalAlpha = 1;
+  c.textAlign = 'center'; c.font = `${22 * U}px "Russo One",sans-serif`;
+  for (const p of G.pops) { c.globalAlpha = Math.min(1, p.life * 2); c.lineWidth = 4 * U; c.strokeStyle = '#000'; c.strokeText(p.txt, p.x, p.y); c.fillStyle = p.col; c.fillText(p.txt, p.x, p.y); }
+  c.globalAlpha = 1;
+  if (G.running && G.combo >= 5) { c.font = `${18 * U}px "Russo One",sans-serif`; c.lineWidth = 4 * U; c.strokeStyle = '#000'; const tx = 'СЕРИЯ ×' + G.combo; c.strokeText(tx, W / 2, groundY - 220 * U); c.fillStyle = '#ffd23a'; c.fillText(tx, W / 2, groundY - 220 * U); }
+  c.restore();
+}
+
+/* ============ Экраны ============ */
+let curScreen = 'menu';
+const inMenu = () => !G.running && !G.ended && !G.mode;
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  curScreen = name;
+  if (!name) return;
+  const id = { menu: 'sMenu', levels: 'sLevels', chars: 'sChars', help: 'sHelp', pause: 'sPause', result: 'sResult' }[name];
+  document.getElementById(id).classList.add('on');
+  if (name === 'levels') buildLevels(); if (name === 'chars') buildChars(); if (name === 'menu') { refreshMoney(); G.mode = null; G.ended = false; G.seeds = []; G.pops = []; if (bgGroup !== 0) { bg = makeBg(0); bgGroup = 0; } }
+  if (tg && tg.BackButton) { if (name === 'menu') tg.BackButton.hide(); else tg.BackButton.show(); }
+}
+function refreshMoney() { const t = 'Бабки: ' + save.money + ' ₽'; document.getElementById('menuMoney').textContent = t; document.getElementById('charsMoney').textContent = t; }
+function buildLevels() {
+  const box = document.getElementById('levels'); box.innerHTML = '';
+  for (let i = 1; i <= NLEVELS; i++) {
+    const open = i === 1 || save.stars[i - 1] > 0, st = save.stars[i] || 0;
+    const d = document.createElement('div'); d.className = 'lv' + (open ? '' : ' lock');
+    d.innerHTML = open ? `${i}<small>${'★'.repeat(st)}</small>` : '🔒';
+    if (open) d.onclick = () => { sfx('btn'); startGame('levels', i); };
+    box.appendChild(d);
+  }
+}
+function buildChars() {
+  refreshMoney(); const box = document.getElementById('chars'); box.innerHTML = '';
+  CHARS.forEach((ch, i) => {
+    const own = save.owned.includes(i), d = document.createElement('div'); d.className = 'card' + (save.cur === i ? ' sel' : '');
+    const pc = document.createElement('canvas'); pc.width = 168; pc.height = 192; const c = pc.getContext('2d'); c.translate(84, 188); c.scale(0.62, 0.62); drawGopnik(c, ch.look, 0.4, 0, 0);
+    const info = document.createElement('div'); info.className = 'info';
+    info.innerHTML = `<b>${ch.name}</b><span>${ch.perk}</span>`;
+    const b = document.createElement('button'); b.className = 'btn small' + (own ? (save.cur === i ? ' gray' : '') : ' red');
+    b.textContent = save.cur === i ? 'Он с тобой' : own ? 'Взять на район' : 'Купить за ' + ch.price + ' ₽';
+    if (!own && save.money < ch.price) b.disabled = true;
+    b.onclick = () => {
+      sfx('btn');
+      if (!own) { if (save.money < ch.price) return; save.money -= ch.price; save.owned.push(i); haptic('ok'); toast('Теперь он с тобой!'); }
+      save.cur = i; persist(); buildChars();
+    };
+    info.appendChild(b); d.appendChild(pc); d.appendChild(info); box.appendChild(d);
+  });
+}
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { audioInit(); sfx('btn'); showScreen(b.dataset.go); }));
+document.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => { audioInit(); sfx('btn'); act(b.dataset.act); }));
+function act(a) {
+  if (a === 'endless') startGame('endless');
+  if (a === 'resume') { showScreen(null); document.getElementById('hud').classList.add('on'); G.running = true; }
+  if (a === 'restart') startGame(G.mode, G.level);
+  if (a === 'next') startGame('levels', Math.min(NLEVELS, G.level + 1));
+  if (a === 'tomenu') { if (!G.ended && G.mode && G.earned > 0) { save.money += Math.floor(G.earned); persist(); } G.running = false; document.getElementById('hud').classList.remove('on'); showScreen('menu'); }
+}
+function pause() { if (!G.running) return; G.running = false; document.getElementById('hud').classList.remove('on'); showScreen('pause'); }
+document.getElementById('pauseBtn').addEventListener('click', () => { sfx('btn'); pause(); });
+document.getElementById('sndBtn').addEventListener('click', () => { audioInit(); setSound(!save.sound); sfx('btn'); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); if (AC) AC.suspend(); } else if (AC) AC.resume(); });
+function goBack() {
+  if (curScreen === null && G.running) return pause();
+  if (curScreen === 'pause' || curScreen === 'result') return act('tomenu');
+  if (curScreen && curScreen !== 'menu') return showScreen('menu');
+}
+if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') goBack(); });
+
+setSound(save.sound); refreshMoney(); showScreen('menu');
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
